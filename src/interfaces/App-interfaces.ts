@@ -1,11 +1,18 @@
-export interface IBooks {
-    booksCount: number;
+export interface IBookForm {
+    name: string;
+    availableCopies: number;
 }
 
-export interface IBookForm {
+export interface IBook {
     id: string;
     name: string;
     availableCopies: number;
+}
+
+export interface IInfo {
+    error: string;
+    message: string;
+    loadingMsg: string;
 }
 
 export interface IAppState {
@@ -17,6 +24,8 @@ export interface IAppState {
     pendingRequest: boolean;
     result: any | null;
     libraryContract: any | null;
-    info: any | null;
-    books: IBookForm[];
+    info: IInfo;
+    form: IBookForm;
+    availableBooks: IBook[];
+    books: IBook[];
 }

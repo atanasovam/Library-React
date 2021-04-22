@@ -1,13 +1,13 @@
-import { IBookForm } from '../interfaces/App-interfaces';
+import { IBook, IBookForm } from '../interfaces/App-interfaces';
 
 const createBook = async (contract: any, bookParams: IBookForm) => {
     const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
     const response = await createBookTransactionReceipt.wait();
-
-    if (response.status !== 1) {
-        // console.log("Transaction was not successful!");
-        return;
-    }
+    return response.status;
+    // if (response.status !== 1) {
+    //     // console.log("Transaction was not successful!");
+    //     return response.status;
+    // }
 
     // console.log("Transaction successful!");
 };
@@ -37,9 +37,9 @@ const getBooksCount = async (contract: any): Promise<number> => {
     return parseInt(booksCount, 10);
 };
 
-const getAvailableBooks = (allBooks: any[]): IBookForm[] => allBooks.filter((book: IBookForm) => book.availableCopies > 0);
+const getAvailableBooks = (allBooks: any[]): IBook[] => allBooks.filter((book: IBook) => book.availableCopies > 0);
 
-const getAllBooks = async (contract: any, booksCount: number): Promise<IBookForm[]> => {
+const getAllBooks = async (contract: any, booksCount: number): Promise<IBook[]> => {
     const allBooks = [];
     let book;
     let id;

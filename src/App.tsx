@@ -16,14 +16,14 @@ import { getChainData } from './helpers/utilities';
 import { LIBRARY_ADDRESS } from './constants';
 import LIBRARY from './constants/abis/Library.json';
 
-import { IAppState, IBookForm } from './interfaces/App-interfaces';
+import { IAppState, IBookForm, IBook } from './interfaces/App-interfaces';
 import * as appService from './services/app-service';
 
 const SLayout = styled.div`
   position: relative;
   width: 100%;
   min-height: 100vh;
-  text-align: center;
+  text-align: left;
 `;
 
 const CustomButton = styled.button`
@@ -62,6 +62,12 @@ const TableRow = styled.div`
   }
 `;
 
+const LongString = styled.p`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const INITIAL_STATE: IAppState = {
   fetching: false,
   address: '',
@@ -71,7 +77,16 @@ const INITIAL_STATE: IAppState = {
   pendingRequest: false,
   result: null,
   libraryContract: null,
-  info: null,
+  info: {
+    error: '',
+    message: '',
+    loadingMsg: ''
+  },
+  form: {
+    name: '',
+    availableCopies: 0
+  },
+  availableBooks: [],
   books: []
 };
 
@@ -104,7 +119,7 @@ class App extends React.Component<any, any> {
     const provider = await this.web3Modal.connect();
     const library = new Web3Provider(provider);
     const network = await library.getNetwork();
-    
+
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
 
@@ -118,11 +133,11 @@ class App extends React.Component<any, any> {
     });
 
     const booksCount = await libraryContract.viewAllBooksCount();
-    const allBooks: IBookForm[] = await this.getAllBooks(booksCount);
-    const books: IBookForm[] = appService.getAvailableBooks(allBooks);
+    const books: IBook[] = await this.getAllBooks(booksCount);
+    const availableBooks: IBook[] = appService.getAvailableBooks(books);
 
-    await this.setState({ books });
-    
+    await this.setState({ books, availableBooks });
+
     await this.subscribeToProviderEvents(provider);
   };
 
@@ -141,7 +156,7 @@ class App extends React.Component<any, any> {
   public getAllBooks = async (booksCount: number) => {
     const { libraryContract } = this.state;
 
-    if(!libraryContract) {
+    if (!libraryContract) {
       return [];
     }
 
@@ -152,12 +167,40 @@ class App extends React.Component<any, any> {
   public getBooksCount = async () => {
     const { libraryContract } = this.state;
 
-    if(!libraryContract) {
+    if (!libraryContract) {
       return 0;
     }
 
     const count = await appService.getBooksCount(libraryContract);
     return count;
+  };
+
+  public createBook = async () => {
+    const { libraryContract } = this.state;
+
+    if (!libraryContract) {
+      return;
+    }
+
+    const bookParams: IBookForm = this.state.form;
+    const response = await appService.createBook(libraryContract, bookParams);
+
+    if(response.status !== 1) {
+      await this.setState({info: { message: "Cannot create book!"}});
+      return;
+    }
+
+    await this.setState({info: { message: "Created book!"}});
+  };
+
+  public borrowBook = async (bookId: string) => {
+    const { libraryContract, availableBooks } = this.state;
+
+    if (!libraryContract) {
+      return;
+    }
+
+    await appService.borrowBook(libraryContract, availableBooks, bookId);
   };
 
   public async unSubscribe(provider: any) {
@@ -216,47 +259,108 @@ class App extends React.Component<any, any> {
 
   };
 
-  public createBooksList = (books: IBookForm[]) => {
+  public handleInputChange = async (event: any) => {
+    const { name, value } = event.target;
+    await this.setState({ form: { ...this.state.form, [name]: value } });
+  };
+
+  public createBooksList = () => {
+    const { books } = this.state;
     const list = [];
-    let currentRow;
+    let currentBook: IBook;
 
     for (let i = 0; i < books.length; i++) {
-      currentRow = 
-        <TableRow className="row pt-3">
-          <div className="col-4 my-auto">{books[i].name}</div>
-          <div className="col-3 my-auto">{books[i].availableCopies}</div>
-          <div className="col-5 my-auto">
-            <CustomButton disabled={true}>Borrow book</CustomButton>
-          </div>
-        </TableRow>;
+      currentBook = books[i];
 
-      list.push(currentRow);
+      list.push(
+        <TableRow className="row pt-3">
+          <div className="col-4 my-auto">{currentBook.name}</div>
+          <div className="col-3 my-auto">{currentBook.availableCopies}</div>
+          <div className="col-5 my-auto">
+            <CustomButton onClick={() => this.borrowBook(currentBook.id)} disabled={false}>Borrow book</CustomButton>
+          </div>
+        </TableRow>
+      );
     }
 
     return list;
   };
 
-  public renderHomeScreen = (books: IBookForm[]) => {
-    return (
-      <div className="row px-3">
-        <div className="col-4">
-          <h4>Available books</h4>
+  public createBorrowedBooksList = () => {
+    const { books } = this.state;
 
-          <div className="row pb-2">
-            <div className="col-4">Name</div>
-            <div className="col-3">Copies left</div>
-            <div className="col-5"/>
+    const list = [];
+    let currentBook: IBook;
+
+    for (let i = 0; i < books.length; i++) {
+      currentBook = books[i];
+
+      list.push(
+        <TableRow className="row pt-3">
+          <div className="col-6 my-auto">
+            <LongString>{currentBook.id}</LongString></div>
+          <div className="col-4 my-auto">{currentBook.name}</div>
+          <div className="col-2 my-auto">{currentBook.availableCopies}</div>
+        </TableRow>
+      );
+    }
+
+    return list;
+  };
+
+  public renderHomeScreen = () => {
+    return (
+      <div>
+        {this.state.info.message ?
+          (<div className="row">
+            <div className="col-6 mx-auto">
+              {this.renderNotificationBar()}
+            </div>
+          </div>) 
+          :null}
+       
+
+        <div className="row px-3">
+          <div className="col-4">
+            <h4>Available books</h4>
+
+            <div className="row pb-2">
+              <div className="col-4">Name</div>
+              <div className="col-3">Copies</div>
+              <div className="col-5" />
+            </div>
+
+            {this.createBooksList()}
           </div>
 
-          { this.createBooksList(books) }
-        </div>
+          <div className="col-4">
+            <h4>Borrowed books</h4>
+            <div className="row pb-2">
+              <div className="col-6">ID</div>
+              <div className="col-4" >Name</div>
+              <div className="col-2">Copies</div>
+            </div>
+            {this.createBorrowedBooksList()}
+          </div>
 
-        <div className="col-4">
-          <h4>Create books</h4>
-        </div>
+          <div className="col-3">
+            <h4>Create books</h4>
+            <form action="">
+              <div className="form-group mt-1">
+                <label className="form-label d-block">Book name</label>
+                <input value={this.state.form.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
+              </div>
 
-        <div className="col-4">
-          <h4>Borrowed books</h4>
+              <div className="form-group mt-1">
+                <label className="form-label d-block">Copies count</label>
+                <input value={this.state.form.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
+              </div>
+
+              <div>
+                <CustomButton type="button" onClick={this.createBook}>Create book</CustomButton>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -268,17 +372,22 @@ class App extends React.Component<any, any> {
     );
   };
 
-  // public renderAllBooks = (books: IBooks) => {
-
-  // };
+  public renderNotificationBar = () => {
+    return (
+      <div className="row">
+        <div className="col-6 mx-auto">
+          <div className="">{this.state.info.message}</div>
+        </div>
+      </div>
+    );
+  };
 
   public render = () => {
     const {
       address,
       connected,
       chainId,
-      fetching,
-      books
+      fetching
     } = this.state;
 
     return (
@@ -287,18 +396,18 @@ class App extends React.Component<any, any> {
 
           <div className="row">
             <div className="col-12">
-               <Header connected={connected} address={address} chainId={chainId} killSession={this.resetApp} />
+              <Header connected={connected} address={address} chainId={chainId} killSession={this.resetApp} />
             </div>
           </div>
 
           {fetching
             ? this.renderLoader()
-            : connected ? this.renderHomeScreen(books)
-            : (
-              <div className="col-4 mx-auto">
-                {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
-              </div>
-            )
+            : connected ? this.renderHomeScreen()
+              : (
+                <div className="col-4 mx-auto">
+                  {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
+                </div>
+              )
           }
 
         </div>
