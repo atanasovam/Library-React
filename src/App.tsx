@@ -4,14 +4,17 @@ import styled from 'styled-components';
 import Web3Modal from 'web3modal';
 // @ts-ignore
 import WalletConnectProvider from '@walletconnect/web3-provider';
-import Column from './components/Column';
-import Wrapper from './components/Wrapper';
 import Header from './components/Header';
 import Loader from './components/Loader';
 import ConnectButton from './components/ConnectButton';
 
 import { Web3Provider } from '@ethersproject/providers';
+
+import { getContract } from './helpers/ethers';
 import { getChainData } from './helpers/utilities';
+
+import { LIBRARY_ADDRESS } from './constants';
+import LIBRARY from './constants/abis/Library.json';
 
 const SLayout = styled.div`
   position: relative;
@@ -20,33 +23,9 @@ const SLayout = styled.div`
   text-align: center;
 `;
 
-const SContent = styled(Wrapper)`
-  width: 100%;
-  height: 100%;
-  padding: 0 16px;
-`;
-
-const SContainer = styled.div`
-  height: 100%;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  word-break: break-word;
-`;
-
-const SLanding = styled(Column)`
-  height: 600px;
-`;
-
-// @ts-ignore
-const SBalances = styled(SLanding)`
-  height: 100%;
-  & h3 {
-    padding-top: 30px;
-  }
-`;
+interface IBooks {
+  booksCount: number;
+}
 
 interface IAppState {
   fetching: boolean;
@@ -56,8 +35,9 @@ interface IAppState {
   chainId: number;
   pendingRequest: boolean;
   result: any | null;
-  electionContract: any | null;
+  libraryContract: any | null;
   info: any | null;
+  books: IBooks;
 }
 
 const INITIAL_STATE: IAppState = {
@@ -68,8 +48,11 @@ const INITIAL_STATE: IAppState = {
   chainId: 1,
   pendingRequest: false,
   result: null,
-  electionContract: null,
-  info: null
+  libraryContract: null,
+  info: null,
+  books: {
+    booksCount: 0
+  }
 };
 
 class App extends React.Component<any, any> {
@@ -98,26 +81,31 @@ class App extends React.Component<any, any> {
   }
 
   public onConnect = async () => {
-    this.provider = await this.web3Modal.connect();
-
-    const library = new Web3Provider(this.provider);
-
+    const provider = await this.web3Modal.connect();
+    const library = new Web3Provider(provider);
     const network = await library.getNetwork();
+    
+    const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
+    const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
 
-    const address = this.provider.selectedAddress ? this.provider.selectedAddress : this.provider?.accounts[0];
+    const booksCount = await libraryContract.viewAllBooksCount();
 
     await this.setState({
+      provider,
       library,
       chainId: network.chainId,
       address,
-      connected: true
+      connected: true,
+      libraryContract,
+      books: {
+        booksCount: parseInt(booksCount, 10)
+      }
     });
 
-    await this.subscribeToProviderEvents(this.provider);
-
+    await this.subscribeToProviderEvents(provider);
   };
 
-  public subscribeToProviderEvents = async (provider:any) => {
+  public subscribeToProviderEvents = async (provider: any) => {
     if (!provider.on) {
       return;
     }
@@ -129,7 +117,7 @@ class App extends React.Component<any, any> {
     await this.web3Modal.off('accountsChanged');
   };
 
-  public async unSubscribe(provider:any) {
+  public async unSubscribe(provider: any) {
     // Workaround for metamask widget > 9.0.3 (provider.off is undefined);
     window.location.reload(false);
     if (!provider.off) {
@@ -139,27 +127,27 @@ class App extends React.Component<any, any> {
     provider.off("accountsChanged", this.changedAccount);
     provider.off("networkChanged", this.networkChanged);
     provider.off("close", this.close);
-  }
+  };
 
   public changedAccount = async (accounts: string[]) => {
-    if(!accounts.length) {
+    if (!accounts.length) {
       // Metamask Lock fire an empty accounts array 
       await this.resetApp();
     } else {
       await this.setState({ address: accounts[0] });
     }
-  }
+  };
 
   public networkChanged = async (networkId: number) => {
     const library = new Web3Provider(this.provider);
     const network = await library.getNetwork();
     const chainId = network.chainId;
     await this.setState({ chainId, library });
-  }
-  
+  };
+
   public close = async () => {
     this.resetApp();
-  }
+  };
 
   public getNetwork = () => getChainData(this.state.chainId).network;
 
@@ -185,36 +173,50 @@ class App extends React.Component<any, any> {
 
   };
 
+  public renderHomeScreen = (books: IBooks) => {
+    return (
+      <div className="col-12">Books count: {books.booksCount}</div>
+    );
+  };
+
+  public renderLoader = () => {
+    return (
+      <div className="col-4 mx-auto"><Loader /></div>
+    );
+  };
+
   public render = () => {
     const {
       address,
       connected,
       chainId,
-      fetching
+      fetching,
+      books
     } = this.state;
+
     return (
       <SLayout>
-        <Column maxWidth={1000} spanHeight>
-          <Header
-            connected={connected}
-            address={address}
-            chainId={chainId}
-            killSession={this.resetApp}
-          />
-          <SContent>
-            {fetching ? (
-              <Column center>
-                <SContainer>
-                  <Loader />
-                </SContainer>
-              </Column>
-            ) : (
-                <SLanding center>
-                  {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
-                </SLanding>
-              )}
-          </SContent>
-        </Column>
+        <div className="container">
+
+          <div className="row">
+            <div className="col-12">
+               <Header connected={connected} address={address} chainId={chainId} killSession={this.resetApp} />
+            </div>
+          </div>
+
+          <div className="row">
+            {fetching
+              ? this.renderLoader()
+              : connected ? this.renderHomeScreen(books)
+                : (
+                  <div className="col-4 mx-auto">
+                    {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
+                  </div>
+                )
+            }
+          </div>
+
+        </div>
       </SLayout>
     );
   };
