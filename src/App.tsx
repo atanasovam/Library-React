@@ -16,6 +16,9 @@ import { getChainData } from './helpers/utilities';
 import { LIBRARY_ADDRESS } from './constants';
 import LIBRARY from './constants/abis/Library.json';
 
+import { IAppState, IBookForm } from './interfaces/App-interfaces';
+import * as appService from './services/app-service';
+
 const SLayout = styled.div`
   position: relative;
   width: 100%;
@@ -23,22 +26,43 @@ const SLayout = styled.div`
   text-align: center;
 `;
 
-interface IBooks {
-  booksCount: number;
-}
+const CustomButton = styled.button`
+  width: 100%;
+  padding: 10px 7px;
+  font-size: 16px;
+  transition: all 0.5s;
+  cursor: pointer;
+  background-color: #28eb9b;
+  border: 2px solid #28eb9b;
+  color: white;
+  font-weight: 600;
 
-interface IAppState {
-  fetching: boolean;
-  address: string;
-  library: any;
-  connected: boolean;
-  chainId: number;
-  pendingRequest: boolean;
-  result: any | null;
-  libraryContract: any | null;
-  info: any | null;
-  books: IBooks;
-}
+  &:hover {
+    transition: all 0.5s;
+    color: #28eb9b;
+    background-color: white;
+  }
+`;
+
+const TableRow = styled.div`
+  margin-bottom: 1px;
+  padding: 12px;
+  font-size: 16px;
+  transition: all 0.5s;
+  cursor: pointer;
+  background-color: #f0fcf9;
+  border: 2px solid white;
+  color: #0b5442;
+  font-weight: 600;
+
+  &:hover {
+    transition: all 0.5s;
+    color: #20b075;
+    background-color: #e6f5f0;
+  }
+`;
+// 093325 text
+// e6f5f0
 
 const INITIAL_STATE: IAppState = {
   fetching: false,
@@ -51,7 +75,8 @@ const INITIAL_STATE: IAppState = {
   libraryContract: null,
   info: null,
   books: {
-    booksCount: 0
+    name: '',
+    copiesCount: 0
   }
 };
 
@@ -88,7 +113,7 @@ class App extends React.Component<any, any> {
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
 
-    const booksCount = await libraryContract.viewAllBooksCount();
+    // const booksCount = await libraryContract.viewAllBooksCount();
 
     await this.setState({
       provider,
@@ -98,7 +123,8 @@ class App extends React.Component<any, any> {
       connected: true,
       libraryContract,
       books: {
-        booksCount: parseInt(booksCount, 10)
+        name: '',
+        copiesCount: 0
       }
     });
 
@@ -115,6 +141,32 @@ class App extends React.Component<any, any> {
     provider.on("close", this.close);
 
     await this.web3Modal.off('accountsChanged');
+  };
+
+  public getAllBooks = async (booksCount: number) => {
+    const { libraryContract } = this.state;
+
+    if(!libraryContract) {
+      return;
+    }
+
+    // const booksCount: number = await appService.getBooksCount(libraryContract);
+    const books = await appService.getAllBooks(libraryContract, booksCount);
+    
+    return books;
+  };
+
+  public getAllAvailableBooks = async (allBooks: any) => appService.getAvailableBooks(allBooks);
+
+  public getBooksCount = async () => {
+    const { libraryContract } = this.state;
+
+    if(!libraryContract) {
+      return 0;
+    }
+
+    const count = await appService.getBooksCount(libraryContract);
+    return count;
   };
 
   public async unSubscribe(provider: any) {
@@ -173,9 +225,51 @@ class App extends React.Component<any, any> {
 
   };
 
-  public renderHomeScreen = (books: IBooks) => {
+  public createBooksList = (books: IBookForm) => {
+    const list = [];
+    let currentRow;
+
+    for (let i = 0; i < 3; i++) {
+      currentRow = 
+        <TableRow className="row pt-3">
+          <div className="col-4 my-auto">Book 1</div>
+          <div className="col-4 my-auto">3</div>
+          <div className="col-4 my-auto">
+            <CustomButton disabled={true}>Borrow book</CustomButton>
+          </div>
+        </TableRow>;
+
+      list.push(currentRow);
+    }
+
+    return list;
+  };
+
+  public renderHomeScreen = (books: IBookForm) => {
+    
+
     return (
-      <div className="col-12">Books count: {books.booksCount}</div>
+      <div className="row px-3">
+        <div className="col-4">
+          <h4>All available books</h4>
+
+          <div className="row pb-2">
+            <div className="col-4">Name</div>
+            <div className="col-4">Available copies</div>
+            <div className="col-4"/>
+          </div>
+
+          { this.createBooksList(books) }
+        </div>
+
+        <div className="col-4">
+          <h4>Create books</h4>
+        </div>
+
+        <div className="col-4">
+          <h4>Borrowed books</h4>
+        </div>
+      </div>
     );
   };
 
@@ -184,6 +278,10 @@ class App extends React.Component<any, any> {
       <div className="col-4 mx-auto"><Loader /></div>
     );
   };
+
+  // public renderAllBooks = (books: IBooks) => {
+
+  // };
 
   public render = () => {
     const {
@@ -196,7 +294,7 @@ class App extends React.Component<any, any> {
 
     return (
       <SLayout>
-        <div className="container">
+        <div className="container-fluid">
 
           <div className="row">
             <div className="col-12">
@@ -204,17 +302,15 @@ class App extends React.Component<any, any> {
             </div>
           </div>
 
-          <div className="row">
-            {fetching
-              ? this.renderLoader()
-              : connected ? this.renderHomeScreen(books)
-                : (
-                  <div className="col-4 mx-auto">
-                    {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
-                  </div>
-                )
-            }
-          </div>
+          {fetching
+            ? this.renderLoader()
+            : connected ? this.renderHomeScreen(books)
+              : (
+                <div className="col-4 mx-auto">
+                  {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
+                </div>
+              )
+          }
 
         </div>
       </SLayout>
