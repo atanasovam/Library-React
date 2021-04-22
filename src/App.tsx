@@ -108,19 +108,21 @@ class App extends React.Component<any, any> {
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
 
-    const booksCount = await libraryContract.viewAllBooksCount();
-    const books = await appService.getAllBooks(libraryContract, booksCount);
-
     await this.setState({
       provider,
       library,
       chainId: network.chainId,
       address,
       connected: true,
-      libraryContract,
-      books
+      libraryContract
     });
 
+    const booksCount = await libraryContract.viewAllBooksCount();
+    const allBooks: IBookForm[] = await this.getAllBooks(booksCount);
+    const books: IBookForm[] = appService.getAvailableBooks(allBooks);
+
+    await this.setState({ books });
+    
     await this.subscribeToProviderEvents(provider);
   };
 
@@ -140,16 +142,12 @@ class App extends React.Component<any, any> {
     const { libraryContract } = this.state;
 
     if(!libraryContract) {
-      return;
+      return [];
     }
 
-    // const booksCount: number = await appService.getBooksCount(libraryContract);
     const books = await appService.getAllBooks(libraryContract, booksCount);
-    
     return books;
   };
-
-  public getAllAvailableBooks = async (allBooks: any) => appService.getAvailableBooks(allBooks);
 
   public getBooksCount = async () => {
     const { libraryContract } = this.state;
@@ -242,7 +240,7 @@ class App extends React.Component<any, any> {
     return (
       <div className="row px-3">
         <div className="col-4">
-          <h4>All available books</h4>
+          <h4>Available books</h4>
 
           <div className="row pb-2">
             <div className="col-4">Name</div>
@@ -296,11 +294,11 @@ class App extends React.Component<any, any> {
           {fetching
             ? this.renderLoader()
             : connected ? this.renderHomeScreen(books)
-              : (
-                <div className="col-4 mx-auto">
-                  {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
-                </div>
-              )
+            : (
+              <div className="col-4 mx-auto">
+                {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
+              </div>
+            )
           }
 
         </div>

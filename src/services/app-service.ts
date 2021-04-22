@@ -37,9 +37,9 @@ const getBooksCount = async (contract: any): Promise<number> => {
     return parseInt(booksCount, 10);
 };
 
-const getAvailableBooks = (allBooks: any) => allBooks.filter((book: any) => book.availableCopiesCount > 0);
+const getAvailableBooks = (allBooks: any[]): IBookForm[] => allBooks.filter((book: IBookForm) => book.availableCopies > 0);
 
-const getAllBooks = async (contract: any, booksCount: number) => {
+const getAllBooks = async (contract: any, booksCount: number): Promise<IBookForm[]> => {
     const allBooks = [];
     let book;
     let id;
