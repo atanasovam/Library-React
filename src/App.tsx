@@ -40,7 +40,7 @@ const CustomButton = styled.button`
   &:hover {
     transition: all 0.5s;
     color: #28eb9b;
-    background-color: white;
+    background-color: transparent;
   }
 `;
 
@@ -61,8 +61,6 @@ const TableRow = styled.div`
     background-color: #e6f5f0;
   }
 `;
-// 093325 text
-// e6f5f0
 
 const INITIAL_STATE: IAppState = {
   fetching: false,
@@ -74,10 +72,7 @@ const INITIAL_STATE: IAppState = {
   result: null,
   libraryContract: null,
   info: null,
-  books: {
-    name: '',
-    copiesCount: 0
-  }
+  books: []
 };
 
 class App extends React.Component<any, any> {
@@ -113,7 +108,8 @@ class App extends React.Component<any, any> {
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
 
-    // const booksCount = await libraryContract.viewAllBooksCount();
+    const booksCount = await libraryContract.viewAllBooksCount();
+    const books = await appService.getAllBooks(libraryContract, booksCount);
 
     await this.setState({
       provider,
@@ -122,10 +118,7 @@ class App extends React.Component<any, any> {
       address,
       connected: true,
       libraryContract,
-      books: {
-        name: '',
-        copiesCount: 0
-      }
+      books
     });
 
     await this.subscribeToProviderEvents(provider);
@@ -225,16 +218,16 @@ class App extends React.Component<any, any> {
 
   };
 
-  public createBooksList = (books: IBookForm) => {
+  public createBooksList = (books: IBookForm[]) => {
     const list = [];
     let currentRow;
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < books.length; i++) {
       currentRow = 
         <TableRow className="row pt-3">
-          <div className="col-4 my-auto">Book 1</div>
-          <div className="col-4 my-auto">3</div>
-          <div className="col-4 my-auto">
+          <div className="col-4 my-auto">{books[i].name}</div>
+          <div className="col-3 my-auto">{books[i].availableCopies}</div>
+          <div className="col-5 my-auto">
             <CustomButton disabled={true}>Borrow book</CustomButton>
           </div>
         </TableRow>;
@@ -245,9 +238,7 @@ class App extends React.Component<any, any> {
     return list;
   };
 
-  public renderHomeScreen = (books: IBookForm) => {
-    
-
+  public renderHomeScreen = (books: IBookForm[]) => {
     return (
       <div className="row px-3">
         <div className="col-4">
@@ -255,8 +246,8 @@ class App extends React.Component<any, any> {
 
           <div className="row pb-2">
             <div className="col-4">Name</div>
-            <div className="col-4">Available copies</div>
-            <div className="col-4"/>
+            <div className="col-3">Copies left</div>
+            <div className="col-5"/>
           </div>
 
           { this.createBooksList(books) }

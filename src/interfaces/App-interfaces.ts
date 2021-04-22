@@ -3,8 +3,9 @@ export interface IBooks {
 }
 
 export interface IBookForm {
+    id: string;
     name: string;
-    copiesCount: number;
+    availableCopies: number;
 }
 
 export interface IAppState {
@@ -17,5 +18,5 @@ export interface IAppState {
     result: any | null;
     libraryContract: any | null;
     info: any | null;
-    books: IBookForm;
+    books: IBookForm[];
 }

@@ -1,7 +1,7 @@
 import { IBookForm } from '../interfaces/App-interfaces';
 
 const createBook = async (contract: any, bookParams: IBookForm) => {
-    const createBookTransactionReceipt = await contract.createBook(bookParams.copiesCount, bookParams.name);
+    const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
     const response = await createBookTransactionReceipt.wait();
 
     if (response.status !== 1) {
@@ -34,7 +34,6 @@ const returnBook = async (contract: any, bookId: any) => await contract.returnBo
 
 const getBooksCount = async (contract: any): Promise<number> => {
     const booksCount = await contract.viewAllBooksCount();
-    // console.log(`Books count: ${booksCount}`);
     return parseInt(booksCount, 10);
 };
 
@@ -52,10 +51,9 @@ const getAllBooks = async (contract: any, booksCount: number) => {
         book = {
             id,
             name,
-            availableCopiesCount
+            availableCopies: parseInt(availableCopiesCount, 10)
         };
 
-        // console.table([book]);
         allBooks.push(book);
     }
 
