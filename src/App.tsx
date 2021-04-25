@@ -87,6 +87,7 @@ const INITIAL_STATE: IAppState = {
     availableCopies: 0
   },
   availableBooks: [],
+  borrowedBooks: [],
   books: []
 };
 
@@ -135,8 +136,9 @@ class App extends React.Component<any, any> {
     const booksCount = await libraryContract.viewAllBooksCount();
     const books: IBook[] = await this.getAllBooks(booksCount);
     const availableBooks: IBook[] = appService.getAvailableBooks(books);
-
-    await this.setState({ books, availableBooks });
+    const borrowedBooks = await this.getBorrowedBooksByUser();
+    
+    await this.setState({ books, availableBooks, borrowedBooks });
 
     await this.subscribeToProviderEvents(provider);
   };
@@ -193,14 +195,26 @@ class App extends React.Component<any, any> {
     await this.setState({info: { message: "Created book!"}});
   };
 
-  public borrowBook = async (bookId: string) => {
+  public borrowBook = async (event: any) => {
     const { libraryContract, availableBooks } = this.state;
+    const bookId = event.target.dataset.bookId;
 
     if (!libraryContract) {
       return;
     }
 
     await appService.borrowBook(libraryContract, availableBooks, bookId);
+  };
+
+  public returnBook = async (event: any) => {
+    const { libraryContract } = this.state;
+    const bookId = event.target.dataset.bookId;
+
+    if (!libraryContract) {
+      return;
+    }
+
+    await appService.returnBook(libraryContract, bookId);
   };
 
   public async unSubscribe(provider: any) {
@@ -265,19 +279,19 @@ class App extends React.Component<any, any> {
   };
 
   public createBooksList = () => {
-    const { books } = this.state;
+    const { availableBooks } = this.state;
     const list = [];
     let currentBook: IBook;
 
-    for (let i = 0; i < books.length; i++) {
-      currentBook = books[i];
+    for (let i = 0; i < availableBooks.length; i++) {
+      currentBook = availableBooks[i];
 
       list.push(
         <TableRow className="row pt-3">
-          <div className="col-4 my-auto">{currentBook.name}</div>
-          <div className="col-3 my-auto">{currentBook.availableCopies}</div>
+          <div className="col-5 my-auto">{currentBook.name}</div>
+          <div className="col-2 my-auto">{currentBook.availableCopies}</div>
           <div className="col-5 my-auto">
-            <CustomButton onClick={() => this.borrowBook(currentBook.id)} disabled={false}>Borrow book</CustomButton>
+            <CustomButton onClick={this.borrowBook} disabled={false} data-book-id={currentBook.id}>Borrow</CustomButton>
           </div>
         </TableRow>
       );
@@ -286,21 +300,53 @@ class App extends React.Component<any, any> {
     return list;
   };
 
+  public getBorrowedBooksByUser = async () => {
+    const { libraryContract, address } = this.state;
+
+    if (!(libraryContract || address)) {
+      return [];
+    }
+
+    const count = await appService.getBooksCount(libraryContract);
+    const allBooks = await appService.getAllBooks(libraryContract, count);
+
+    const borrowedBooks = [];
+    let currentBook;
+    let isBorrowed;
+
+    for (let i = 0; i < count; i++) {
+      currentBook = allBooks[i];
+      isBorrowed = await appService.isBookBorrowedByUser(libraryContract, address, currentBook.id);
+
+      if (isBorrowed) {
+        borrowedBooks.push(currentBook);
+      }
+    }
+
+    return borrowedBooks;
+  };
+
   public createBorrowedBooksList = () => {
-    const { books } = this.state;
+    const { borrowedBooks } = this.state;
+
+    if (borrowedBooks.length <= 0) {
+      return <TableRow/>;
+    }
 
     const list = [];
     let currentBook: IBook;
 
-    for (let i = 0; i < books.length; i++) {
-      currentBook = books[i];
+    for (let i = 0; i < borrowedBooks.length; i++) {
+      currentBook = borrowedBooks[i];
 
       list.push(
         <TableRow className="row pt-3">
-          <div className="col-6 my-auto">
+          <div className="col-4 my-auto">
             <LongString>{currentBook.id}</LongString></div>
           <div className="col-4 my-auto">{currentBook.name}</div>
-          <div className="col-2 my-auto">{currentBook.availableCopies}</div>
+          <div className="col-4 my-auto">
+            <CustomButton onClick={this.returnBook} disabled={false} data-book-id={currentBook.id}>Return</CustomButton>
+          </div>
         </TableRow>
       );
     }
@@ -309,6 +355,10 @@ class App extends React.Component<any, any> {
   };
 
   public renderHomeScreen = () => {
+    const {
+      borrowedBooks
+    } = this.state;
+
     return (
       <div>
         {this.state.info.message ?
@@ -325,8 +375,8 @@ class App extends React.Component<any, any> {
             <h4>Available books</h4>
 
             <div className="row pb-2">
-              <div className="col-4">Name</div>
-              <div className="col-3">Copies</div>
+              <div className="col-5">Name</div>
+              <div className="col-2">Copies</div>
               <div className="col-5" />
             </div>
 
@@ -336,15 +386,21 @@ class App extends React.Component<any, any> {
           <div className="col-4">
             <h4>Borrowed books</h4>
             <div className="row pb-2">
-              <div className="col-6">ID</div>
+              <div className="col-4">ID</div>
               <div className="col-4" >Name</div>
-              <div className="col-2">Copies</div>
+              <div className="col-4" />
             </div>
-            {this.createBorrowedBooksList()}
+           {
+              borrowedBooks && borrowedBooks.length > 0 ?
+              this.createBorrowedBooksList() :
+              <div className="alert alert-warning" role="alert">
+                  No books rented!
+              </div>
+           }
           </div>
 
           <div className="col-3">
-            <h4>Create books</h4>
+            <h4>Create book</h4>
             <form action="">
               <div className="form-group mt-1">
                 <label className="form-label d-block">Book name</label>
@@ -387,7 +443,7 @@ class App extends React.Component<any, any> {
       address,
       connected,
       chainId,
-      fetching
+      fetching,
     } = this.state;
 
     return (

@@ -26,6 +26,7 @@ export interface IAppState {
     libraryContract: any | null;
     info: IInfo;
     form: IBookForm;
+    borrowedBooks: any[];
     availableBooks: IBook[];
     books: IBook[];
 }

@@ -65,7 +65,7 @@ const isBookAvailable = async (contract: any, bookId: any) => {
     return availableCopiesCount > 0;
 };
 
-const isBookBorrowedByUser = async (contract: any, wallet: any, bookId: any) => await contract.borrowedBooks(wallet.address, bookId);
+const isBookBorrowedByUser = async (contract: any, address: any, bookId: any) => await contract.borrowedBooks(address, bookId);
 
 export {
     createBook,
