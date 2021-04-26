@@ -155,6 +155,7 @@ class App extends React.Component<any, any> {
     await this.web3Modal.off('accountsChanged');
   };
 
+  // contract methods
   public getAllBooks = async () => {
     const { libraryContract } = this.state;
     const booksCount = await libraryContract.viewAllBooksCount();
@@ -179,6 +180,8 @@ class App extends React.Component<any, any> {
   };
 
   public createBook = async () => {
+    this.setState({ componentLoading: { createBook: true }});
+
     const { libraryContract } = this.state;
 
     if (!libraryContract) {
@@ -194,6 +197,13 @@ class App extends React.Component<any, any> {
     }
 
     await this.updateAvailableBooks();
+
+    this.state.form = {
+      name: "",
+      availableCopies: 0
+    };
+
+    this.setState({ componentLoading: { createBook: false }});
     await this.setState({info: { message: "Created book!"}});
   };
 
@@ -236,6 +246,7 @@ class App extends React.Component<any, any> {
       this.setState({ componentLoading: { availableBooks: false } });
     }
   };
+  // contract methods end
 
   public async unSubscribe(provider: any) {
     // Workaround for metamask widget > 9.0.3 (provider.off is undefined);
@@ -298,6 +309,7 @@ class App extends React.Component<any, any> {
     await this.setState({ form: { ...this.state.form, [name]: value } });
   };
 
+  // Borrow 
   public updateBorrowedBooksByUser = async () => {
     await this.setState({ componentLoading: { borrowedBooks: true } });
 
@@ -334,6 +346,18 @@ class App extends React.Component<any, any> {
     return borrowedBooks;
   };
 
+  // Available books
+  public updateAvailableBooks = async () => {
+    await this.setState({ componentLoading: { availableBooks: true } });
+
+    const books: IBook[] = await this.getAllBooks();
+    const availableBooks: IBook[] = appService.getAvailableBooks(books);
+
+    await this.setState({ availableBooks });
+    await this.setState({ componentLoading: { availableBooks: false } });
+  };
+
+  // create html components
   public createBorrowedBooksList = () => {
     const { borrowedBooks } = this.state;
 
@@ -366,16 +390,6 @@ class App extends React.Component<any, any> {
     return list;
   };
 
-  public updateAvailableBooks = async () => {
-    await this.setState({ componentLoading: { availableBooks: true } });
-
-    const books: IBook[] = await this.getAllBooks();
-    const availableBooks: IBook[] = appService.getAvailableBooks(books);
-
-    await this.setState({ availableBooks });
-    await this.setState({ componentLoading: { availableBooks: false } });
-  };
-
   public createAvailableBooksList = () => {
     const { availableBooks } = this.state;
     const list = [];
@@ -397,7 +411,9 @@ class App extends React.Component<any, any> {
 
     return list;
   };
+  // create html components end
 
+  // render methods
   public renderHomeScreen = () => {
     const {
       componentLoading
@@ -445,22 +461,38 @@ class App extends React.Component<any, any> {
           </div>
 
           <div className="col-3">
-            <h4>Create book</h4>
-            <form action="">
-              <div className="form-group mt-1">
-                <label className="form-label d-block">Book name</label>
-                <input value={this.state.form.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
-              </div>
+            <div className="row">
+              <div className="col-12">
 
-              <div className="form-group mt-1">
-                <label className="form-label d-block">Copies count</label>
-                <input value={this.state.form.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
-              </div>
+                <h4>Create book</h4>
+                <form action="">
+                  <div className="form-group mt-1">
+                    <label className="form-label d-block">Book name</label>
+                    <input disabled={componentLoading.createBook} value={this.state.form.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
+                  </div>
 
-              <div>
-                <CustomButton type="button" onClick={this.createBook}>Create book</CustomButton>
+                  <div className="form-group mt-1">
+                    <label className="form-label d-block">Copies count</label>
+                    <input disabled={componentLoading.createBook} value={this.state.form.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
+                  </div>
+
+                  <div>
+                    <CustomButton disabled={componentLoading.createBook} type="button" onClick={this.createBook}>Create book</CustomButton>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
+
+            { 
+              componentLoading.createBook
+                ? (
+                  <div className="row">
+                    {this.renderLoader()}
+                  </div>
+                )
+                : null
+            }
+
           </div>
         </div>
       </div>
@@ -469,7 +501,7 @@ class App extends React.Component<any, any> {
 
   public renderLoader = () => {
     return (
-      <div className="col-4 mx-auto"><Loader /></div>
+      <div className="col-2 mx-auto pt-4"><Loader /></div>
     );
   };
 
