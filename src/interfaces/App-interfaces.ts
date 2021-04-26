@@ -24,9 +24,13 @@ export interface IAppState {
     pendingRequest: boolean;
     result: any | null;
     libraryContract: any | null;
+    componentLoading: {
+        availableBooks: boolean,
+        borrowedBooks: boolean,
+        createBook: boolean
+    },
     info: IInfo;
     form: IBookForm;
     borrowedBooks: any[];
     availableBooks: IBook[];
-    books: IBook[];
 }

@@ -1,36 +1,57 @@
 import { IBook, IBookForm } from '../interfaces/App-interfaces';
 
-const createBook = async (contract: any, bookParams: IBookForm) => {
-    const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
-    const response = await createBookTransactionReceipt.wait();
-    return response.status;
-    // if (response.status !== 1) {
-    //     // console.log("Transaction was not successful!");
-    //     return response.status;
-    // }
+const createBook = async (contract: any, bookParams: IBookForm): Promise<number> => {
+    try {
+        const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
+        const transactionResult = await createBookTransactionReceipt.wait();
 
-    // console.log("Transaction successful!");
+        if (transactionResult.status === 1) {
+            return Promise.resolve(1);
+        }
+
+        return Promise.resolve(0);
+    } catch (response) {
+        return Promise.resolve(0);
+    }
 };
 
-const borrowBook = async (contract: any, availableBooks: any, bookId: any) => {
-    // console.log(`Borrowing book with id: ${bookId}...`);
+const borrowBook = async (contract: any, availableBooks: any, bookId: string): Promise<number> => {
     if (availableBooks.length === 0) {
-        // console.log(`Cannot borrow book with id: ${bookId}- no available copies!`);
-        return;
+        return Promise.resolve(0);
     }
 
     try {
         const borrowBookTransactionReceipt = await contract.borrowBook(bookId);
-        await borrowBookTransactionReceipt.wait();
-        // console.log("Transaction was successful!\n");
-    } catch (response) {
-        if (response.status !== 1) {
-            // console.log("Transaction was not successful!\n");
+        const transactionResult = await borrowBookTransactionReceipt.wait();
+
+        if (transactionResult.status === 1) {
+            return Promise.resolve(1);
         }
+
+        return Promise.resolve(0);
+    } catch (response) {
+        return Promise.resolve(0);
     }
 };
 
-const returnBook = async (contract: any, bookId: any) => await contract.returnBook(bookId);
+const returnBook = async (contract: any, bookId: string): Promise<number> => {
+    if (bookId === "") {
+        return Promise.resolve(0);
+    }
+
+    try {
+        const returnBookTransactionReceipt = await contract.returnBook(bookId);
+        const transactionResult = await returnBookTransactionReceipt.wait();
+
+        if (transactionResult.status === 1) {
+            return Promise.resolve(1);
+        }
+
+        return Promise.resolve(0);
+    } catch (response) {
+        return Promise.resolve(0);
+    }
+}
 
 const getBooksCount = async (contract: any): Promise<number> => {
     const booksCount = await contract.viewAllBooksCount();
