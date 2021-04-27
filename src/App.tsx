@@ -42,6 +42,14 @@ const CustomButton = styled.button`
     color: #28eb9b;
     background-color: transparent;
   }
+
+  &:disabled {
+    &:hover {
+      background-color: #28eb9b;
+      border: 2px solid #28eb9b;
+      color: white;
+    }
+  }
 `;
 
 const TableRow = styled.div`
