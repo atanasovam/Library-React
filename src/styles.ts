@@ -111,6 +111,24 @@ export const globalStyle = `
     -webkit-text-size-adjust: 100%;  
   }
 
+  .inner-scrollbar::-webkit-scrollbar-track {
+    background-color: #F5F5F5;
+  }
+  
+  .inner-scrollbar::-webkit-scrollbar {
+    width: 9px;
+    background-color: #F5F5F5;
+  }
+  
+  .inner-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: rgba(${colors.lime});
+  }
+  
+  .inner-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(${colors.lime});
+  }
+
   button {
     border-style: none;
     line-height: 1em;

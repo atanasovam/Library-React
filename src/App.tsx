@@ -21,6 +21,7 @@ import {
 } from './constants';
 import LIBRARY from './constants/abis/Library.json';
 import LIB from './constants/abis/LIB.json';
+import LIBWrapper from './constants/abis/LIBWrapper.json';
 
 import { IAppState, IBookForm, IBook } from './interfaces/App-interfaces';
 import * as appService from './services/app-service';
@@ -82,6 +83,13 @@ const LongString = styled.p`
   text-overflow: ellipsis;
 `;
 
+const ScrollList = styled.div`
+  max-height: 250px;
+  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
+`;
+
 const INITIAL_STATE: IAppState = {
   fetching: false,
   address: '',
@@ -92,21 +100,28 @@ const INITIAL_STATE: IAppState = {
   result: null,
   libraryContract: null,
   tokenContract: null,
+  tokenWrapperContract: null,
   messageBarVisibility: "show",
   componentLoading: {
     availableBooks: true,
     borrowedBooks: true,
-    createBook: true
+    createBook: true,
+    buyLib: true
   },
   info: {
     error: '',
     message: '',
     loadingMsg: ''
   },
-  form: {
+  createBookForm: {
     name: '',
     availableCopies: 0
   },
+  buyLIBForm: {
+    etherValue: 1
+  },
+  libraryBalance: 0,
+  approvedBalance: 0,
   availableBooks: [],
   borrowedBooks: []
 };
@@ -144,6 +159,7 @@ class App extends React.Component<any, any> {
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
     const tokenContract = getContract(TOKEN_ADDRESS, LIB.abi, library, address);
+    const tokenWrapperContract = getContract(TOKEN_ADDRESS, LIBWrapper.abi, library, address);
     
     await this.setState({
       provider,
@@ -152,11 +168,13 @@ class App extends React.Component<any, any> {
       address,
       connected: true,
       libraryContract,
-      tokenContract
+      tokenContract,
+      tokenWrapperContract
     });
 
     await this.updateAvailableBooks();
     await this.updateBorrowedBooksByUser();
+    await this.setLibraryBalance();
 
     await this.subscribeToProviderEvents(provider);
   };
@@ -207,7 +225,7 @@ class App extends React.Component<any, any> {
       return;
     }
 
-    const bookParams: IBookForm = this.state.form;
+    const bookParams: IBookForm = this.state.createBookForm;
     const response = await appService.createBook(libraryContract, bookParams);
 
     if(response.status !== 1) {
@@ -220,7 +238,7 @@ class App extends React.Component<any, any> {
 
     await this.updateAvailableBooks();
 
-    this.state.form = {
+    this.state.createBookForm = {
       name: "",
       availableCopies: 0
     };
@@ -229,11 +247,25 @@ class App extends React.Component<any, any> {
     await this.setState({info: { message: "Created book!"}});
   };
 
+  public buyLIB = async (event: any) => {
+    const { tokenWrapperContract } = this.state;
+    const { etherValue } = this.state.buyLIBForm;
+
+    if (!etherValue|| !tokenWrapperContract) {
+      return;
+    }
+
+    const wrapValue = ethers.utils.parseEther(etherValue.toString());
+    const wrapTx = await tokenWrapperContract.wrap({value: wrapValue});
+
+    await wrapTx.wait();
+  };
+
   public borrowBook = async (event: any) => {
     const bookId = event.target.dataset.bookId;
     
     await this.approveTx();
-    this.setState({ componentLoading: { availableBooks: true } });
+    await this.setState({ componentLoading: { availableBooks: true } });
 
     const { libraryContract, availableBooks } = this.state;
 
@@ -248,6 +280,7 @@ class App extends React.Component<any, any> {
     if(transactionResult.status === 1) {
       await this.updateAvailableBooks();
       await this.updateBorrowedBooksByUser();
+
       await this.setState({ info: { message: "Book borrowed!" } });
       await this.setState({ messageBarVisibility: "show" });
 
@@ -288,6 +321,28 @@ class App extends React.Component<any, any> {
     await this.setState({ info: { error: "Error borrowing book!" } });
     await this.setState({ messageBarVisibility: "show" });
   };
+
+  public getUserBalance = async () => {
+    const { tokenContract, address } = this.state;
+
+    const libraryRawBalance = await tokenContract.balanceOf(address);
+    const libraryBalance = ethers.utils.formatEther(libraryRawBalance);
+
+    const approvedRawBalance = await tokenContract.allowance(address, LIBRARY_ADDRESS);
+    const approvedBalance = parseInt(ethers.utils.formatEther(approvedRawBalance), 10);
+
+    await this.setState({ libraryBalance, approvedBalance });
+  };
+
+  public setLibraryBalance = async () => {
+    const { tokenContract } = this.state;
+
+    const libraryBalanceRaw = await tokenContract.balanceOf(LIBRARY_ADDRESS);
+    const libraryBalance = parseInt(ethers.utils.formatEther(libraryBalanceRaw), 10);
+
+    await this.setState({ libraryBalance });
+  };
+
   // contract methods end
 
   public approveTx = async () => {
@@ -367,7 +422,7 @@ class App extends React.Component<any, any> {
 
   public handleInputChange = async (event: any) => {
     const { name, value } = event.target;
-    await this.setState({ form: { ...this.state.form, [name]: value } });
+    await this.setState({ form: { ...this.state.createBookForm, [name]: value } });
   };
 
   // Borrow 
@@ -495,7 +550,8 @@ class App extends React.Component<any, any> {
   public renderHomeScreen = () => {
     const {
       componentLoading,
-      info
+      info,
+      libraryBalance
     } = this.state;
 
     return (
@@ -506,72 +562,95 @@ class App extends React.Component<any, any> {
             {info.message && info.message !== '' ? this.renderNotificationBar() : null}
           </div>
         </div>
-       
+
         <div className="row px-3">
           <div className="col-4">
-            <h4>Available books</h4>
 
-            <div className="row pb-2">
-              <div className="col-5">Name</div>
-              <div className="col-2">Copies</div>
-              <div className="col-5" />
+            <div className="col-12">
+              <h4>Available books</h4>
+
+              <div className="row pb-2">
+                <div className="col-5">Name</div>
+                <div className="col-2">Copies</div>
+                <div className="col-5" />
+              </div>
+
+              <ScrollList className="inner-scrollbar">
+                {componentLoading.availableBooks
+                  ? this.renderLoader()
+                  : this.createAvailableBooksList()}
+              </ScrollList>
             </div>
 
-            {componentLoading.availableBooks
-              ? this.renderLoader()
-              : this.createAvailableBooksList()}
-          </div>
+            <div className="col-12">
+              <h4>Borrowed books</h4>
+              <div className="row pb-2">
+                <div className="col-4">ID</div>
+                <div className="col-4" >Name</div>
+                <div className="col-4" />
+              </div>
 
-          <div className="col-4">
-            <h4>Borrowed books</h4>
-            <div className="row pb-2">
-              <div className="col-4">ID</div>
-              <div className="col-4" >Name</div>
-              <div className="col-4" />
+              <ScrollList className="inner-scrollbar">
+                {componentLoading.borrowedBooks
+                  ? this.renderLoader()
+                  : this.createBorrowedBooksList()
+                }
+              </ScrollList>
+
             </div>
 
-            {componentLoading.borrowedBooks
-              ? this.renderLoader()
-              : this.createBorrowedBooksList()
-            }
-           
           </div>
 
           <div className="col-3">
             <div className="row">
-              <div className="col-12">
+                  <div className="col-12">
 
-                <h4>Create book</h4>
-                <form action="">
-                  <div className="form-group mt-1">
-                    <label className="form-label d-block">Book name</label>
-                    <input disabled={componentLoading.createBook} value={this.state.form.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
-                  </div>
+                    <h4>Create book</h4>
+                    <form action="">
+                      <div className="form-group mt-1">
+                        <label className="form-label d-block">Book name</label>
+                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
+                      </div>
 
-                  <div className="form-group mt-1">
-                    <label className="form-label d-block">Copies count</label>
-                    <input disabled={componentLoading.createBook} value={this.state.form.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
-                  </div>
+                      <div className="form-group mt-1">
+                        <label className="form-label d-block">Copies count</label>
+                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
+                      </div>
 
-                  <div>
-                    <CustomButton disabled={componentLoading.createBook} type="button" onClick={this.createBook}>Create book</CustomButton>
+                      <div>
+                        <CustomButton disabled={componentLoading.createBook} type="button" onClick={this.createBook}>Create book</CustomButton>
+                      </div>
+                    </form>
                   </div>
-                </form>
+                </div>
+
+            {componentLoading.createBook
+              ? (
+                <div className="row">
+                  {this.renderLoader()}
+                </div>
+              )
+              : null}
+          </div>
+
+          <div className="col-3">
+            <h4>Buy LIB</h4>
+            <form action="">
+              <div className="form-group mt-1">
+                <label className="form-label d-block">Ethereum Amount</label>
+                <input value={this.state.buyLIBForm.etherValue} onChange={this.handleInputChange} className="form-control" type="number" name="etherValue" />
               </div>
-            </div>
 
-            { 
-              componentLoading.createBook
-                ? (
-                  <div className="row">
-                    {this.renderLoader()}
-                  </div>
-                )
-                : null
-            }
+              <div>
+                <CustomButton  type="button" onClick={this.buyLIB}>Buy LIB</CustomButton>
+              </div>
+            </form>
+
+            <h5>LIB Balance: {libraryBalance}LIB</h5>
 
           </div>
         </div>
+
       </div>
     );
   };

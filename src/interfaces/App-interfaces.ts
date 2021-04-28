@@ -3,6 +3,10 @@ export interface IBookForm {
     availableCopies: number;
 }
 
+export interface IBuyLIBForm {
+    etherValue: number;
+}
+
 export interface IBook {
     id: string;
     name: string;
@@ -25,14 +29,19 @@ export interface IAppState {
     result: any | null;
     libraryContract: any | null;
     tokenContract: any | null;
+    tokenWrapperContract: any | null;
     messageBarVisibility: "hide" | "show",
     componentLoading: {
         availableBooks: boolean,
+        buyLib: boolean,
         borrowedBooks: boolean,
         createBook: boolean
     },
     info: IInfo;
-    form: IBookForm;
+    createBookForm: IBookForm;
+    buyLIBForm: IBuyLIBForm;
     borrowedBooks: any[];
     availableBooks: IBook[];
+    libraryBalance: number;
+    approvedBalance: number;
 }
