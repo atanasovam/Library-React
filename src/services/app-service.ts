@@ -30,6 +30,17 @@ const borrowBook = async (contract: any, availableBooks: any, bookId: string): P
     }
 };
 
+const approveBorrow = async (contract: any, address: string, bookPrice: string): Promise<any> => {
+    try {
+        const transaction = await contract.approve(address, bookPrice);
+        const transactionReceipt = await transaction.wait();
+
+        return Promise.resolve(transactionReceipt);
+    } catch (error) {
+        return Promise.resolve(error);
+    }
+};
+
 const returnBook = async (contract: any, bookId: string): Promise<number> => {
     if (bookId === "") {
         return Promise.resolve(0);
@@ -87,6 +98,7 @@ const isBookBorrowedByUser = async (contract: any, address: any, bookId: any) =>
 export {
     createBook,
     borrowBook,
+    approveBorrow,
     returnBook,
     getBooksCount,
     getAllBooks,

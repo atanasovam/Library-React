@@ -351,17 +351,16 @@ class App extends React.Component<any, any> {
 
     await this.setState({ componentLoading: { availableBooks: true } });
 
-    const transaction = await tokenContract.approve(LIBRARY_ADDRESS, bookPrice);
+    const transactionReceipt = await appService.approveBorrow(tokenContract, LIBRARY_ADDRESS, bookPrice);
 
-    const transactionReceipt = await transaction.wait();
-
-    if (transactionReceipt.status !== 1) {
-      // console.log(transactionReceipt);
-      await this.setState({ showErrorContainer: true, errorContainer: "Failed transaction" });
+    if (transactionReceipt.status === 1) {
+      await this.setState({ componentLoading: { availableBooks: false } });
+      await this.updateAvailableBooks();
+      return;
     }
 
     await this.setState({ componentLoading: { availableBooks: false } });
-    await this.updateAvailableBooks();
+    await this.setState({ info: { error: transactionReceipt.message } });
   }
 
   public async unSubscribe(provider: any) {
