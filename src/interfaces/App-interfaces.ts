@@ -44,5 +44,5 @@ export interface IAppState {
     availableBooks: IBook[];
     libraryBalance: number;
     userBalance: number;
-    approvedBalance: number;
+    isAdmin: boolean;
 }

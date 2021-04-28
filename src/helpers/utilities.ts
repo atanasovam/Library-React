@@ -137,7 +137,7 @@ export function showNotification(text:string) {
     new Noty({ 
       text,
       timeout: NOTIFICATION_TIMEOUT,
-      type: 'success'
-      
+      type: 'success',
+      theme: 'mint'
   }).show();
 }
