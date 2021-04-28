@@ -17,7 +17,8 @@ import { ethers } from 'ethers';
 
 import { 
   LIBRARY_ADDRESS,
-  TOKEN_ADDRESS
+  TOKEN_ADDRESS,
+  TOKEN_WRAPPER_ADDRESS
 } from './constants';
 import LIBRARY from './constants/abis/Library.json';
 import LIB from './constants/abis/LIB.json';
@@ -161,7 +162,7 @@ class App extends React.Component<any, any> {
 
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
     const tokenContract = getContract(TOKEN_ADDRESS, LIB.abi, library, address);
-    const tokenWrapperContract = getContract(TOKEN_ADDRESS, LIBWrapper.abi, library, address);
+    const tokenWrapperContract = getContract(TOKEN_WRAPPER_ADDRESS, LIBWrapper.abi, library, address);
     
     await this.setState({
       provider,
@@ -425,12 +426,22 @@ class App extends React.Component<any, any> {
     const { form } = event.currentTarget;
     const id = form.id;
 
-    if(id === "createBookForm"){
-      await this.setState({ createBookForm: { [name]: value } });
+    if (id === "createBookForm") {
+      await this.setState({
+        createBookForm: {
+          ...this.state.createBookForm,
+          [name]: value
+        }
+      });
       return;
     }
 
-    await this.setState({ buyLIBForm: { [name]: value } });
+    await this.setState({
+      buyLIBForm: {
+        ...this.state.buyLIBForm,
+        [name]: value
+      }
+    });
   };
 
   // Borrow 
