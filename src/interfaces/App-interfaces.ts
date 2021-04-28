@@ -43,5 +43,6 @@ export interface IAppState {
     borrowedBooks: any[];
     availableBooks: IBook[];
     libraryBalance: number;
+    userBalance: number;
     approvedBalance: number;
 }

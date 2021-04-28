@@ -122,6 +122,7 @@ const INITIAL_STATE: IAppState = {
   },
   libraryBalance: 0,
   approvedBalance: 0,
+  userBalance: 0,
   availableBooks: [],
   borrowedBooks: []
 };
@@ -157,6 +158,7 @@ class App extends React.Component<any, any> {
     const network = await library.getNetwork();
 
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
+
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
     const tokenContract = getContract(TOKEN_ADDRESS, LIB.abi, library, address);
     const tokenWrapperContract = getContract(TOKEN_ADDRESS, LIBWrapper.abi, library, address);
@@ -325,13 +327,13 @@ class App extends React.Component<any, any> {
   public getUserBalance = async () => {
     const { tokenContract, address } = this.state;
 
-    const libraryRawBalance = await tokenContract.balanceOf(address);
-    const libraryBalance = ethers.utils.formatEther(libraryRawBalance);
+    const userRawBalance = await tokenContract.balanceOf(address);
+    const userBalance = ethers.utils.formatEther(userRawBalance);
 
     const approvedRawBalance = await tokenContract.allowance(address, LIBRARY_ADDRESS);
     const approvedBalance = parseInt(ethers.utils.formatEther(approvedRawBalance), 10);
 
-    await this.setState({ libraryBalance, approvedBalance });
+    await this.setState({ userBalance, approvedBalance });
   };
 
   public setLibraryBalance = async () => {
@@ -342,8 +344,6 @@ class App extends React.Component<any, any> {
 
     await this.setState({ libraryBalance });
   };
-
-  // contract methods end
 
   public approveTx = async () => {
     const bookPrice = ethers.utils.parseEther("1").toString();
@@ -362,6 +362,7 @@ class App extends React.Component<any, any> {
     await this.setState({ componentLoading: { availableBooks: false } });
     await this.setState({ info: { error: transactionReceipt.message } });
   }
+  // contract methods end
 
   public async unSubscribe(provider: any) {
     // Workaround for metamask widget > 9.0.3 (provider.off is undefined);
@@ -421,7 +422,15 @@ class App extends React.Component<any, any> {
 
   public handleInputChange = async (event: any) => {
     const { name, value } = event.target;
-    await this.setState({ form: { ...this.state.createBookForm, [name]: value } });
+    const { form } = event.currentTarget;
+    const id = form.id;
+
+    if(id === "createBookForm"){
+      await this.setState({ createBookForm: { [name]: value } });
+      return;
+    }
+
+    await this.setState({ buyLIBForm: { [name]: value } });
   };
 
   // Borrow 
@@ -550,7 +559,8 @@ class App extends React.Component<any, any> {
     const {
       componentLoading,
       info,
-      libraryBalance
+      libraryBalance,
+      userBalance
     } = this.state;
 
     return (
@@ -605,15 +615,15 @@ class App extends React.Component<any, any> {
                   <div className="col-12">
 
                     <h4>Create book</h4>
-                    <form action="">
+                    <form id="createBookForm" action="">
                       <div className="form-group mt-1">
                         <label className="form-label d-block">Book name</label>
-                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.name} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
+                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.name || ''} onChange={this.handleInputChange} className="form-control" type="text" name="name" />
                       </div>
 
                       <div className="form-group mt-1">
                         <label className="form-label d-block">Copies count</label>
-                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.availableCopies} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
+                        <input disabled={componentLoading.createBook} value={this.state.createBookForm.availableCopies || ''} onChange={this.handleInputChange} className="form-control" type="number" name="availableCopies" />
                       </div>
 
                       <div>
@@ -634,10 +644,10 @@ class App extends React.Component<any, any> {
 
           <div className="col-3">
             <h4>Buy LIB</h4>
-            <form action="">
+            <form id="buyLIBForm" action="">
               <div className="form-group mt-1">
                 <label className="form-label d-block">Ethereum Amount</label>
-                <input value={this.state.buyLIBForm.etherValue} onChange={this.handleInputChange} className="form-control" type="number" name="etherValue" />
+                <input value={this.state.buyLIBForm.etherValue || ''} onChange={this.handleInputChange} className="form-control" type="number" name="etherValue" />
               </div>
 
               <div>
@@ -645,7 +655,8 @@ class App extends React.Component<any, any> {
               </div>
             </form>
 
-            <h5>LIB Balance: {libraryBalance}LIB</h5>
+            <h5>Library Balance: {libraryBalance}LIB</h5>
+            <h5>User Balance: {userBalance}LIB</h5>
 
           </div>
         </div>
