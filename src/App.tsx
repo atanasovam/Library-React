@@ -515,7 +515,7 @@ class App extends React.Component<any, any> {
       currentBook = availableBooks[i];
 
       list.push(
-        <TableRow className="row pt-3">
+        <TableRow className="row pt-3" key={currentBook.id}>
           <div className="col-5 my-auto">{currentBook.name}</div>
           <div className="col-2 my-auto">{currentBook.availableCopies}</div>
           <div className="col-5 my-auto">
