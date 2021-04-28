@@ -11,10 +11,16 @@ import ConnectButton from './components/ConnectButton';
 import { Web3Provider } from '@ethersproject/providers';
 
 import { getContract } from './helpers/ethers';
-import { getChainData } from './helpers/utilities';
 
-import { LIBRARY_ADDRESS } from './constants';
+import { getChainData } from './helpers/utilities'; // showNotification
+import { ethers } from 'ethers';
+
+import { 
+  LIBRARY_ADDRESS,
+  TOKEN_ADDRESS
+} from './constants';
 import LIBRARY from './constants/abis/Library.json';
+import LIB from './constants/abis/LIB.json';
 
 import { IAppState, IBookForm, IBook } from './interfaces/App-interfaces';
 import * as appService from './services/app-service';
@@ -85,6 +91,8 @@ const INITIAL_STATE: IAppState = {
   pendingRequest: false,
   result: null,
   libraryContract: null,
+  tokenContract: null,
+  messageBarVisibility: "show",
   componentLoading: {
     availableBooks: true,
     borrowedBooks: true,
@@ -135,14 +143,16 @@ class App extends React.Component<any, any> {
 
     const address = provider.selectedAddress ? provider.selectedAddress : provider?.accounts[0];
     const libraryContract = getContract(LIBRARY_ADDRESS, LIBRARY.abi, library, address);
-
+    const tokenContract = getContract(TOKEN_ADDRESS, LIB.abi, library, address);
+    
     await this.setState({
       provider,
       library,
       chainId: network.chainId,
       address,
       connected: true,
-      libraryContract
+      libraryContract,
+      tokenContract
     });
 
     await this.updateAvailableBooks();
@@ -193,14 +203,18 @@ class App extends React.Component<any, any> {
     const { libraryContract } = this.state;
 
     if (!libraryContract) {
+      this.setState({ info: { error: "No library contract!" } });
       return;
     }
 
     const bookParams: IBookForm = this.state.form;
     const response = await appService.createBook(libraryContract, bookParams);
 
-    if(response !== 1) {
-      await this.setState({info: { message: "Cannot create book!"}});
+    if(response.status !== 1) {
+      await this.setState({info: { error: response.message}});
+      await this.setState({ messageBarVisibility: "show" });
+      await this.setState({ componentLoading: { createBook: false }});
+
       return;
     }
 
@@ -211,28 +225,39 @@ class App extends React.Component<any, any> {
       availableCopies: 0
     };
 
-    this.setState({ componentLoading: { createBook: false }});
+    await this.setState({ componentLoading: { createBook: false }});
     await this.setState({info: { message: "Created book!"}});
   };
 
   public borrowBook = async (event: any) => {
+    const bookId = event.target.dataset.bookId;
+    
+    await this.approveTx();
     this.setState({ componentLoading: { availableBooks: true } });
 
     const { libraryContract, availableBooks } = this.state;
-    const bookId = event.target.dataset.bookId;
 
     if (!libraryContract) {
+      await this.setState({ info: { error: "No library contract!" } });
+      await this.setState({ messageBarVisibility: "show" });
       return;
     }
 
     const transactionResult = await appService.borrowBook(libraryContract, availableBooks, bookId);
 
-    if(transactionResult === 1) {
+    if(transactionResult.status === 1) {
       await this.updateAvailableBooks();
       await this.updateBorrowedBooksByUser();
-      
-      this.setState({ componentLoading: { availableBooks: false } });
+      await this.setState({ info: { message: "Book borrowed!" } });
+      await this.setState({ messageBarVisibility: "show" });
+
+      await this.setState({ componentLoading: { availableBooks: false } });
+      return;
     }
+
+    await this.setState({ componentLoading: { availableBooks: false } });
+    await this.setState({ info: { error: "Error borrowing book!" } });
+    await this.setState({ messageBarVisibility: "show" });
   };
 
   public returnBook = async (event: any) => {
@@ -242,6 +267,8 @@ class App extends React.Component<any, any> {
     const bookId = event.target.dataset.bookId;
 
     if (!libraryContract) {
+      await this.setState({ info: { error: "No library contract!" } });
+      await this.setState({ messageBarVisibility: "show" });
       return;
     }
 
@@ -251,10 +278,36 @@ class App extends React.Component<any, any> {
       await this.updateAvailableBooks();
       await this.updateBorrowedBooksByUser();
       
-      this.setState({ componentLoading: { availableBooks: false } });
+      await this.setState({ info: { message: "Book borrowed!" } });
+      await this.setState({ messageBarVisibility: "show" });
+      await this.setState({ componentLoading: { availableBooks: false } });
+      return;
     }
+
+    await this.setState({ componentLoading: { availableBooks: false } });
+    await this.setState({ info: { error: "Error borrowing book!" } });
+    await this.setState({ messageBarVisibility: "show" });
   };
   // contract methods end
+
+  public approveTx = async () => {
+    const bookPrice = ethers.utils.parseEther("1").toString();
+    const { tokenContract } = this.state;
+
+    await this.setState({ componentLoading: { availableBooks: true } });
+
+    const transaction = await tokenContract.approve(LIBRARY_ADDRESS, bookPrice);
+
+    const transactionReceipt = await transaction.wait();
+
+    if (transactionReceipt.status !== 1) {
+      // console.log(transactionReceipt);
+      await this.setState({ showErrorContainer: true, errorContainer: "Failed transaction" });
+    }
+
+    await this.setState({ componentLoading: { availableBooks: false } });
+    await this.updateAvailableBooks();
+  }
 
   public async unSubscribe(provider: any) {
     // Workaround for metamask widget > 9.0.3 (provider.off is undefined);
@@ -421,23 +474,39 @@ class App extends React.Component<any, any> {
   };
   // create html components end
 
+  public changeMessageBarVisibility = async() => {
+    const { messageBarVisibility } =  this.state;
+    
+    await this.setState({ "messageBarVisibility": messageBarVisibility === "hide" ? "show" : "hide" });
+    
+    setTimeout(async () => {
+      await this.setState({
+        info: {
+          error: '',
+          message: '',
+          loading: '',
+        }
+      });
+    }, 500);
+
+  }
+
   // render methods
   public renderHomeScreen = () => {
     const {
-      componentLoading
+      componentLoading,
+      info
     } = this.state;
 
     return (
       <div>
-        {this.state.info.message ?
-          (<div className="row">
-            <div className="col-6 mx-auto">
-              {this.renderNotificationBar()}
-            </div>
-          </div>)
-          : null}
+        <div className="row">
+          <div className="col-6 mx-auto">
+            {info.error && info.error !== '' ? this.renderErrorMessageBar() : null}
+            {info.message && info.message !== '' ? this.renderNotificationBar() : null}
+          </div>
+        </div>
        
-
         <div className="row px-3">
           <div className="col-4">
             <h4>Available books</h4>
@@ -513,12 +582,38 @@ class App extends React.Component<any, any> {
     );
   };
 
-  public renderNotificationBar = () => {
+  public renderErrorMessageBar = () => {
+    const {
+      info,
+      messageBarVisibility
+    } = this.state;
+
+    const classNameList = `alert alert-danger alert-dismissible fade mx-auto ${messageBarVisibility}`;
+
     return (
-      <div className="row">
-        <div className="col-6 mx-auto">
-          <div className="">{this.state.info.message}</div>
-        </div>
+      <div className={classNameList} role="alert">
+        <LongString>{info.error}</LongString>
+        <button type="button" className="close" data-dismiss="alert" aria-label="Close" onClick={this.changeMessageBarVisibility}>
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    );
+  };
+
+  public renderNotificationBar = () => {
+    const {
+      info,
+      messageBarVisibility
+    } = this.state;
+
+    const classNameList = `alert alert-success alert-dismissible fade mx-auto ${messageBarVisibility}`;
+
+    return (
+      <div className={classNameList} role="alert">
+        <LongString>{info.message}</LongString>
+        <button type="button" className="close" data-dismiss="alert" aria-label="Close" onClick={this.changeMessageBarVisibility}>
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
     );
   };

@@ -69,7 +69,7 @@ Loader.propTypes = {
 
 Loader.defaultProps = {
   size: 40,
-  color: 'lightBlue'
+  color: 'lime'
 }
 
 export default Loader

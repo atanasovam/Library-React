@@ -24,6 +24,8 @@ export interface IAppState {
     pendingRequest: boolean;
     result: any | null;
     libraryContract: any | null;
+    tokenContract: any | null;
+    messageBarVisibility: "hide" | "show",
     componentLoading: {
         availableBooks: boolean,
         borrowedBooks: boolean,

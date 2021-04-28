@@ -1,36 +1,32 @@
 import { IBook, IBookForm } from '../interfaces/App-interfaces';
 
-const createBook = async (contract: any, bookParams: IBookForm): Promise<number> => {
+const createBook = async (contract: any, bookParams: IBookForm): Promise<any> => {
     try {
         const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
         const transactionResult = await createBookTransactionReceipt.wait();
 
         if (transactionResult.status === 1) {
-            return Promise.resolve(1);
+            return Promise.resolve(transactionResult);
         }
 
-        return Promise.resolve(0);
+        return Promise.resolve(transactionResult);
     } catch (response) {
-        return Promise.resolve(0);
+        return Promise.resolve(response);
     }
 };
 
-const borrowBook = async (contract: any, availableBooks: any, bookId: string): Promise<number> => {
+const borrowBook = async (contract: any, availableBooks: any, bookId: string): Promise<any> => {
     if (availableBooks.length === 0) {
-        return Promise.resolve(0);
+        return Promise.resolve({ response: 0 });
     }
 
     try {
         const borrowBookTransactionReceipt = await contract.borrowBook(bookId);
         const transactionResult = await borrowBookTransactionReceipt.wait();
 
-        if (transactionResult.status === 1) {
-            return Promise.resolve(1);
-        }
-
-        return Promise.resolve(0);
+        return Promise.resolve(transactionResult);
     } catch (response) {
-        return Promise.resolve(0);
+        return Promise.resolve(response);
     }
 };
 
