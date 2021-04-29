@@ -164,6 +164,10 @@ class App extends React.Component<any, any> {
     const tokenContract = getContract(TOKEN_ADDRESS, LIB.abi, library, address);
     const tokenWrapperContract = getContract(TOKEN_WRAPPER_ADDRESS, LIBWrapper.abi, library, address);
 
+    const owner = await libraryContract.owner();
+    const isAdmin = owner.toLowerCase() === address.toLowerCase();
+    await this.setState({ isAdmin });
+
     await this.setState({
       provider,
       library,
@@ -263,6 +267,15 @@ class App extends React.Component<any, any> {
 
     await this.setLibraryBalance();
     await this.setUserBalance();
+
+    // const transactionResult = await appService.buyLib(tokenWrapperContract, wrapValue);
+
+    // if(transactionResult.status === 1) {
+    //   return;
+    // }
+
+    // await this.setState({ info: { error: transactionResult.message}});
+    // await this.setState({ componentLoading: { buyLIB: false } });
   };
 
   public borrowBook = async (event: any) => {
@@ -334,19 +347,16 @@ class App extends React.Component<any, any> {
   };
 
   public setLibraryBalance = async () => {
-    const { tokenContract } = this.state;
+    const { library } = this.state;
+    
+    if (!library) {
+      return;
+    }
 
-    const libraryBalanceRaw = await tokenContract.balanceOf(LIBRARY_ADDRESS);
-    const libraryBalance = parseInt(ethers.utils.formatEther(libraryBalanceRaw), 10);
+    const contractETHBalance = await library.getBalance(TOKEN_WRAPPER_ADDRESS);
+    const libraryBalance = parseInt(ethers.utils.formatEther(contractETHBalance), 10);
 
     await this.setState({ libraryBalance });
-  };
-
-  public isAdmin = async () => {
-    const { libraryContract, address } = this.state;
-    const owner = await libraryContract.owner();
-
-    await this.setState({ isAdmin: owner.toLowerCase() === address });
   };
 
   public approveTx = async () => {
@@ -364,6 +374,44 @@ class App extends React.Component<any, any> {
     }
 
     await this.setState({ componentLoading: { availableBooks: false } });
+    await this.setState({ info: { error: transactionReceipt.message } });
+  }
+
+  public approveWithdraw = async (value: any) => {
+    const amount = ethers.utils.parseEther(value.toString()).toString();
+    const { tokenContract } = this.state;
+
+    await this.setState({ componentLoading: { buyLIB: true } });
+    const transactionReceipt = await appService.approveBorrow(tokenContract, TOKEN_WRAPPER_ADDRESS, amount);
+
+    if (transactionReceipt.status === 1) {
+      await this.setState({ componentLoading: { buyLIB: false } });
+      await this.setLibraryBalance();
+      await this.setUserBalance();
+      return;
+    }
+
+    await this.setState({ componentLoading: { buyLIB: false } });
+    await this.setState({ info: { error: transactionReceipt.message } });
+  };
+
+  public withdrawUserBalance = async () => {
+    const { tokenWrapperContract } = this.state;
+
+    await this.approveWithdraw(1);
+    await this.setState({ componentLoading: { buyLib: true } });
+
+    const value = ethers.utils.parseEther('1');
+    const tx = await tokenWrapperContract.unwrap(value);
+    const transactionReceipt = await tx.wait();
+
+    if (transactionReceipt.status === 1) {
+      await this.setState({ componentLoading: { buyLib: false } });
+      await this.updateAvailableBooks();
+      return;
+    }
+
+    await this.setState({ componentLoading: { buyLib: false } });
     await this.setState({ info: { error: transactionReceipt.message } });
   }
   // contract methods end
@@ -564,6 +612,11 @@ class App extends React.Component<any, any> {
 
   public createAvailableBooksList = () => {
     const { availableBooks } = this.state;
+
+    if (availableBooks.length === 0) {
+      return <TableRow className="alert alert-warning" role="alert">No available books!</TableRow>;
+    }
+
     const list = [];
     let currentBook: IBook;
 
@@ -579,6 +632,10 @@ class App extends React.Component<any, any> {
           </div>
         </TableRow>
       );
+    }
+
+    if (availableBooks.length === 0) {
+      return <TableRow className="alert alert-warning" role="alert">No available books!</TableRow>;
     }
 
     return list;
@@ -688,26 +745,43 @@ class App extends React.Component<any, any> {
   public renderLIBDetails = () => {
     const {
       libraryBalance,
+      componentLoading,
       userBalance
     } = this.state;
 
     return (
       <div className="col-3">
+        <div>
+          <h4>Buy LIB</h4>
+          <form id="buyLIBForm" action="">
+            <div className="form-group mt-1">
+              <label className="form-label d-block">Ethereum Amount</label>
+              <input value={this.state.buyLIBForm.etherValue || ''} onChange={this.handleInputChange} className="form-control" type="number" name="etherValue" />
+            </div>
 
-        <h4>Buy LIB</h4>
-        <form id="buyLIBForm" action="">
-          <div className="form-group mt-1">
-            <label className="form-label d-block">Ethereum Amount</label>
-            <input value={this.state.buyLIBForm.etherValue || ''} onChange={this.handleInputChange} className="form-control" type="number" name="etherValue" />
-          </div>
+            <div>
+              <CustomButton type="button" onClick={this.buyLIB}>Buy LIB</CustomButton>
+            </div>
+          </form>
+
+          {componentLoading.buyLib
+            ? (
+              <div className="row">
+                {this.renderLoader()}
+              </div>
+            )
+            : null}
+        </div>
+
+        <div className="pt-4">
+          <h5>Library Balance: {libraryBalance}LIB</h5>
+          <h5>User Balance: {userBalance}LIB</h5>
 
           <div>
-            <CustomButton type="button" onClick={this.buyLIB}>Buy LIB</CustomButton>
+            <CustomButton type="button" onClick={this.withdrawUserBalance}>Withdraw Library Balance</CustomButton>
           </div>
-        </form>
+        </div>
 
-        <h5>Library Balance: {libraryBalance}LIB</h5>
-        <h5>User Balance: {userBalance}LIB</h5>
       </div>
     );
   };
@@ -734,7 +808,7 @@ class App extends React.Component<any, any> {
             {this.renderBorrowedBooksList()}
           </div>
 
-          {!isAdmin ? this.renderCreateBookForm() : null}
+          {isAdmin ? this.renderCreateBookForm() : null}
 
           {this.renderLIBDetails()}
 

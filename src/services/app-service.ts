@@ -5,10 +5,6 @@ const createBook = async (contract: any, bookParams: IBookForm): Promise<any> =>
         const createBookTransactionReceipt = await contract.createBook(bookParams.availableCopies, bookParams.name);
         const transactionResult = await createBookTransactionReceipt.wait();
 
-        if (transactionResult.status === 1) {
-            return Promise.resolve(transactionResult);
-        }
-
         return Promise.resolve(transactionResult);
     } catch (response) {
         return Promise.resolve(response);
@@ -40,6 +36,28 @@ const approveBorrow = async (contract: any, address: string, bookPrice: string):
         return Promise.resolve(error);
     }
 };
+
+const withdrawBalance = async (contract: any, value: any): Promise<any> => {
+    try {
+        const transaction = await contract.unwrap({ value });
+        const transactionReceipt = await transaction.wait();
+
+        return Promise.resolve(transactionReceipt);
+    } catch (error) {
+        return Promise.resolve(error);
+    }
+};
+
+const buyLib = async (contract: any, wrapValue: any) => {
+    try {    
+        const wrapTx = await contract.wrap({ value: wrapValue });
+        const transactionResult = await wrapTx.wait();
+
+        return Promise.resolve(transactionResult);
+    } catch (response) {
+        return Promise.resolve(response);
+    }
+}; 
 
 const returnBook = async (contract: any, bookId: string): Promise<number> => {
     if (bookId === "") {
@@ -104,5 +122,7 @@ export {
     getAllBooks,
     getAvailableBooks,
     isBookAvailable,
-    isBookBorrowedByUser
+    isBookBorrowedByUser,
+    withdrawBalance,
+    buyLib
 }
