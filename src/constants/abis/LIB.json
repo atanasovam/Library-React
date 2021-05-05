@@ -643,40 +643,40 @@
     "absolutePath": "/Users/milenaatanasova/Documents/onboarding/LimeChain-onboarding/Library/contracts/LIB.sol",
     "exportedSymbols": {
       "AccessControl": [
-        835
+        847
       ],
       "Address": [
-        2409
+        2421
       ],
       "Context": [
-        2432
+        2444
       ],
       "ERC20": [
-        1939
+        1951
       ],
       "ERC20Burnable": [
-        1998
+        2010
       ],
       "ERC20Pausable": [
-        2035
+        2047
       ],
       "ERC20PresetMinterPauser": [
-        1436
+        1448
       ],
       "EnumerableSet": [
-        2924
+        2936
       ],
       "IERC20": [
-        2113
+        2125
       ],
       "LIB": [
         14
       ],
       "Pausable": [
-        3016
+        3028
       ],
       "SafeMath": [
-        1300
+        1312
       ]
     },
     "id": 15,
@@ -709,7 +709,7 @@
         "id": 3,
         "nodeType": "ImportDirective",
         "scope": 15,
-        "sourceUnit": 1437,
+        "sourceUnit": 1449,
         "src": "84:69:0",
         "symbolAliases": [],
         "unitAlias": ""
@@ -722,10 +722,10 @@
               "id": 4,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1436,
+              "referencedDeclaration": 1448,
               "src": "171:23:0",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$1436",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$1448",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
@@ -735,28 +735,28 @@
           }
         ],
         "contractDependencies": [
-          835,
-          1436,
-          1939,
-          1998,
-          2035,
-          2113,
-          2432,
-          3016
+          847,
+          1448,
+          1951,
+          2010,
+          2047,
+          2125,
+          2444,
+          3028
         ],
         "contractKind": "contract",
         "fullyImplemented": true,
         "id": 14,
         "linearizedBaseContracts": [
           14,
-          1436,
-          2035,
-          3016,
-          1998,
-          1939,
-          2113,
-          835,
-          2432
+          1448,
+          2047,
+          3028,
+          2010,
+          1951,
+          2125,
+          847,
+          2444
         ],
         "name": "LIB",
         "nodeType": "ContractDefinition",
@@ -813,10 +813,10 @@
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 1436,
+                  "referencedDeclaration": 1448,
                   "src": "213:23:0",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$1436_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$1448_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -855,40 +855,40 @@
     "absolutePath": "/Users/milenaatanasova/Documents/onboarding/LimeChain-onboarding/Library/contracts/LIB.sol",
     "exportedSymbols": {
       "AccessControl": [
-        835
+        847
       ],
       "Address": [
-        2409
+        2421
       ],
       "Context": [
-        2432
+        2444
       ],
       "ERC20": [
-        1939
+        1951
       ],
       "ERC20Burnable": [
-        1998
+        2010
       ],
       "ERC20Pausable": [
-        2035
+        2047
       ],
       "ERC20PresetMinterPauser": [
-        1436
+        1448
       ],
       "EnumerableSet": [
-        2924
+        2936
       ],
       "IERC20": [
-        2113
+        2125
       ],
       "LIB": [
         14
       ],
       "Pausable": [
-        3016
+        3028
       ],
       "SafeMath": [
-        1300
+        1312
       ]
     },
     "id": 15,
@@ -921,7 +921,7 @@
         "id": 3,
         "nodeType": "ImportDirective",
         "scope": 15,
-        "sourceUnit": 1437,
+        "sourceUnit": 1449,
         "src": "84:69:0",
         "symbolAliases": [],
         "unitAlias": ""
@@ -934,10 +934,10 @@
               "id": 4,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1436,
+              "referencedDeclaration": 1448,
               "src": "171:23:0",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$1436",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$1448",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
@@ -947,28 +947,28 @@
           }
         ],
         "contractDependencies": [
-          835,
-          1436,
-          1939,
-          1998,
-          2035,
-          2113,
-          2432,
-          3016
+          847,
+          1448,
+          1951,
+          2010,
+          2047,
+          2125,
+          2444,
+          3028
         ],
         "contractKind": "contract",
         "fullyImplemented": true,
         "id": 14,
         "linearizedBaseContracts": [
           14,
-          1436,
-          2035,
-          3016,
-          1998,
-          1939,
-          2113,
-          835,
-          2432
+          1448,
+          2047,
+          3028,
+          2010,
+          1951,
+          2125,
+          847,
+          2444
         ],
         "name": "LIB",
         "nodeType": "ContractDefinition",
@@ -1025,10 +1025,10 @@
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 1436,
+                  "referencedDeclaration": 1448,
                   "src": "213:23:0",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$1436_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$1448_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -1071,5 +1071,5 @@
   },
   "networks": {},
   "schemaVersion": "2.3.5",
-  "updatedAt": "2021-05-05T08:51:27.686Z"
+  "updatedAt": "2021-05-05T12:20:48.025Z"
 }

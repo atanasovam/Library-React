@@ -413,10 +413,28 @@ class App extends React.Component<any, any> {
     await this.setState({ componentLoading: { buyLib: false } });
     await this.setState({ info: { error: transactionReceipt.message } });
   }
+
+  public withdrawLibraryBalance = async () => {
+    const { libraryContract } = this.state;
+    await this.setState({ componentLoading: { buyLib: true } });
+
+    const transactionReceipt = await appService.withdrawLibraryBalance(libraryContract);
+    console.log(transactionReceipt);
+
+    if (transactionReceipt.status === 1) {
+      await this.setState({ componentLoading: { buyLib: false } });
+      await this.setLibraryBalance();
+      await this.setUserBalance();
+      return;
+    }
+
+    await this.setState({ componentLoading: { buyLib: false } });
+    await this.setState({ info: { error: transactionReceipt.error?.message?.split(': ')[1] } });
+  }
   // contract methods end
 
   public subscribeToProviderEvents = async (provider: any) => {
-    const { libraryContract } = this.state;
+    const { libraryContract, tokenWrapperContract } = this.state;
     if (!provider.on) {
       return;
     }
@@ -428,6 +446,7 @@ class App extends React.Component<any, any> {
     libraryContract.on("LogAddedBook", this.handleAddedBookEvent);
     libraryContract.on("BookBorrowed", this.handleBookBorrowedEvent);
     libraryContract.on("BookReturned", this.handleBookReturnedEvent);
+    tokenWrapperContract.on("LogLIBUnwrapped", this.handleUnwrap);
 
     await this.web3Modal.off('accountsChanged');
   };
@@ -455,6 +474,12 @@ class App extends React.Component<any, any> {
 
   public handleBookBorrowedEvent = (bookId: any) => {
     showNotification(`Borrowed book with id: ${bookId}`);
+  }
+
+  public handleUnwrap = (address: string, value: any) => {
+    console.log(address)
+    console.log(value)
+    showNotification(`Library balance: ${value}`);
   }
 
   public handleBookReturnedEvent = (bookId: any) => {
@@ -778,6 +803,10 @@ class App extends React.Component<any, any> {
 
           <div>
             <CustomButton type="button" onClick={this.withdrawUserBalance}>Withdraw 1LIB</CustomButton>
+          </div>
+
+          <div>
+            <CustomButton type="button" onClick={this.withdrawLibraryBalance}>Withdraw Library Balance</CustomButton>
           </div>
         </div>
 

@@ -49,6 +49,17 @@ const withdrawBalance = async (contract: any, value: any): Promise<any> => {
     }
 };
 
+const withdrawLibraryBalance = async (contract: any) => {
+    try {
+        const transaction = await contract.withdrawLibraryBalance();
+        const transactionReceipt = await transaction.wait();
+
+        return Promise.resolve(transactionReceipt);
+    } catch (error) {
+        return Promise.resolve(error);
+    }
+};
+
 const buyLib = async (contract: any, wrapValue: any) => {
     try {    
         const wrapTx = await contract.wrap({ value: wrapValue });
@@ -138,5 +149,6 @@ export {
     isBookBorrowedByUser,
     withdrawBalance,
     buyLib,
-    unwrapToken
+    unwrapToken,
+    withdrawLibraryBalance
 }
