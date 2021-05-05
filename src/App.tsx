@@ -401,13 +401,12 @@ class App extends React.Component<any, any> {
     await this.approveWithdraw(1);
     await this.setState({ componentLoading: { buyLib: true } });
 
-    const value = ethers.utils.parseEther('1');
-    const tx = await tokenWrapperContract.unwrap(value);
-    const transactionReceipt = await tx.wait();
+    const transactionReceipt = await appService.unwrapToken(tokenWrapperContract, '1');
 
     if (transactionReceipt.status === 1) {
       await this.setState({ componentLoading: { buyLib: false } });
-      await this.updateAvailableBooks();
+      await this.setLibraryBalance();
+      await this.setUserBalance();
       return;
     }
 
@@ -778,7 +777,7 @@ class App extends React.Component<any, any> {
           <h5>User Balance: {userBalance}LIB</h5>
 
           <div>
-            <CustomButton type="button" onClick={this.withdrawUserBalance}>Withdraw Library Balance</CustomButton>
+            <CustomButton type="button" onClick={this.withdrawUserBalance}>Withdraw 1LIB</CustomButton>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import { IBook, IBookForm } from '../interfaces/App-interfaces';
+import { ethers } from 'ethers';
 
 const createBook = async (contract: any, bookParams: IBookForm): Promise<any> => {
     try {
@@ -78,6 +79,18 @@ const returnBook = async (contract: any, bookId: string): Promise<number> => {
     }
 }
 
+const unwrapToken = async (contract: any, value: any) => {
+    try {
+        value = ethers.utils.parseEther(value);
+        const tx = await contract.unwrap(value);
+        const transactionReceipt = await tx.wait();
+
+        return Promise.resolve(transactionReceipt);
+    } catch (error) {
+        return Promise.resolve(error);
+    }
+};
+
 const getBooksCount = async (contract: any): Promise<number> => {
     const booksCount = await contract.viewAllBooksCount();
     return parseInt(booksCount, 10);
@@ -124,5 +137,6 @@ export {
     isBookAvailable,
     isBookBorrowedByUser,
     withdrawBalance,
-    buyLib
+    buyLib,
+    unwrapToken
 }
