@@ -261,21 +261,17 @@ class App extends React.Component<any, any> {
     }
 
     const wrapValue = ethers.utils.parseEther(etherValue.toString());
-    const wrapTx = await tokenWrapperContract.wrap({ value: wrapValue });
+    const transactionResult = await appService.buyLib(tokenWrapperContract, wrapValue);
 
-    await wrapTx.wait();
-
-    await this.setLibraryBalance();
-    await this.setUserBalance();
-
-    // const transactionResult = await appService.buyLib(tokenWrapperContract, wrapValue);
-
-    // if(transactionResult.status === 1) {
-    //   return;
-    // }
-
-    // await this.setState({ info: { error: transactionResult.message}});
-    // await this.setState({ componentLoading: { buyLIB: false } });
+    if(transactionResult.status === 1) {
+      await this.setLibraryBalance();
+      await this.setUserBalance();
+      // console.log('Balance: ', ethers.utils.formatEther(await this.state.tokenContract.balanceOf(this.state.address)))
+      return;
+    }
+      
+    await this.setState({ info: { error: transactionResult.message}});
+    await this.setState({ componentLoading: { buyLIB: false } });
   };
 
   public borrowBook = async (event: any) => {
@@ -534,7 +530,7 @@ class App extends React.Component<any, any> {
     const { name, value } = event.target;
     const { form } = event.currentTarget;
     const id = form.id;
-
+    
     if (id === "createBookForm") {
       await this.setState({
         createBookForm: {
@@ -805,7 +801,7 @@ class App extends React.Component<any, any> {
             <CustomButton type="button" onClick={this.withdrawUserBalance}>Withdraw 1LIB</CustomButton>
           </div>
 
-          <div>
+          <div className="pt-4">
             <CustomButton type="button" onClick={this.withdrawLibraryBalance}>Withdraw Library Balance</CustomButton>
           </div>
         </div>

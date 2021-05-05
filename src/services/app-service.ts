@@ -60,9 +60,9 @@ const withdrawLibraryBalance = async (contract: any) => {
     }
 };
 
-const buyLib = async (contract: any, wrapValue: any) => {
+const buyLib = async (contract: any, value: any) => {
     try {    
-        const wrapTx = await contract.wrap({ value: wrapValue });
+        const wrapTx = await contract.wrap({ value });
         const transactionResult = await wrapTx.wait();
 
         return Promise.resolve(transactionResult);
