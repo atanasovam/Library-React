@@ -343,14 +343,14 @@ class App extends React.Component<any, any> {
   };
 
   public setLibraryBalance = async () => {
-    const { library } = this.state;
+    const { tokenContract, library } = this.state;
     
     if (!library) {
       return;
     }
 
-    const contractETHBalance = await library.getBalance(TOKEN_WRAPPER_ADDRESS);
-    const libraryBalance = parseInt(ethers.utils.formatEther(contractETHBalance), 10);
+    const contractTOKENBalance = await tokenContract.balanceOf(LIBRARY_ADDRESS);
+    const libraryBalance = ethers.utils.formatEther(contractTOKENBalance);
 
     await this.setState({ libraryBalance });
   };
