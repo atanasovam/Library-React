@@ -107,31 +107,31 @@
     "absolutePath": "/Users/milenaatanasova/Documents/onboarding/LimeChain-onboarding/Library/contracts/LIBWrapper.sol",
     "exportedSymbols": {
       "AccessControl": [
-        822
+        813
       ],
       "Address": [
-        2396
+        2387
       ],
       "Context": [
-        2419
+        2410
       ],
       "ERC20": [
-        1926
+        1917
       ],
       "ERC20Burnable": [
-        1985
+        1976
       ],
       "ERC20Pausable": [
-        2022
+        2013
       ],
       "ERC20PresetMinterPauser": [
-        1423
+        1414
       ],
       "EnumerableSet": [
-        2911
+        2902
       ],
       "IERC20": [
-        2100
+        2091
       ],
       "LIB": [
         14
@@ -140,10 +140,10 @@
         128
       ],
       "Pausable": [
-        3003
+        2994
       ],
       "SafeMath": [
-        1287
+        1278
       ]
     },
     "id": 129,
@@ -752,7 +752,7 @@
                       "lValueRequested": false,
                       "memberName": "mint",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1367,
+                      "referencedDeclaration": 1358,
                       "src": "484:13:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_uint256_$returns$__$",
@@ -1233,7 +1233,7 @@
                       "lValueRequested": false,
                       "memberName": "transferFrom",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1624,
+                      "referencedDeclaration": 1615,
                       "src": "718:21:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_address_$_t_uint256_$returns$_t_bool_$",
@@ -1301,7 +1301,7 @@
                       "lValueRequested": false,
                       "memberName": "burn",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1951,
+                      "referencedDeclaration": 1942,
                       "src": "777:13:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$returns$__$",
@@ -1556,31 +1556,31 @@
     "absolutePath": "/Users/milenaatanasova/Documents/onboarding/LimeChain-onboarding/Library/contracts/LIBWrapper.sol",
     "exportedSymbols": {
       "AccessControl": [
-        822
+        813
       ],
       "Address": [
-        2396
+        2387
       ],
       "Context": [
-        2419
+        2410
       ],
       "ERC20": [
-        1926
+        1917
       ],
       "ERC20Burnable": [
-        1985
+        1976
       ],
       "ERC20Pausable": [
-        2022
+        2013
       ],
       "ERC20PresetMinterPauser": [
-        1423
+        1414
       ],
       "EnumerableSet": [
-        2911
+        2902
       ],
       "IERC20": [
-        2100
+        2091
       ],
       "LIB": [
         14
@@ -1589,10 +1589,10 @@
         128
       ],
       "Pausable": [
-        3003
+        2994
       ],
       "SafeMath": [
-        1287
+        1278
       ]
     },
     "id": 129,
@@ -2201,7 +2201,7 @@
                       "lValueRequested": false,
                       "memberName": "mint",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1367,
+                      "referencedDeclaration": 1358,
                       "src": "484:13:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_uint256_$returns$__$",
@@ -2682,7 +2682,7 @@
                       "lValueRequested": false,
                       "memberName": "transferFrom",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1624,
+                      "referencedDeclaration": 1615,
                       "src": "718:21:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_address_$_t_uint256_$returns$_t_bool_$",
@@ -2750,7 +2750,7 @@
                       "lValueRequested": false,
                       "memberName": "burn",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 1951,
+                      "referencedDeclaration": 1942,
                       "src": "777:13:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$returns$__$",
@@ -3009,5 +3009,5 @@
   },
   "networks": {},
   "schemaVersion": "2.3.5",
-  "updatedAt": "2021-05-07T07:45:36.495Z"
+  "updatedAt": "2021-05-07T08:16:36.781Z"
 }
